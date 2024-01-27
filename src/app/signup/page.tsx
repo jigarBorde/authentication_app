@@ -1,26 +1,54 @@
 "use client";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Link from "next/link";
 
 const SignupPage = () => {
     const router = useRouter();
+    const config = {
+        headers: {
+            "content-type": "application/json"
+        },
+        withCredentials: true,
+    }
     const [user, setUser] = useState({
         email: "",
         password: "",
         username: "",
     });
-    const [buttonDisabled, setButtonDisabled] = useState(false);
+    const [buttonDisabled, setButtonDisabled] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const isEmailValid = (email: any) => {
+        // Basic email validation using a simple regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
 
     const handleSignup = async () => {
         try {
+            setError(""); // Reset error state
             setLoading(true);
-            const response = await axios.post("/api/users/signup", user);
+
+            // Validation for empty fields
+            if (!user.username || !user.email || !user.password) {
+                setError("Please fill in all fields");
+                return;
+            }
+
+            // Validate email format
+            if (!isEmailValid(user.email)) {
+                setError("Please enter a valid email address");
+                return;
+            }
+
+            const response = await axios.post("/api/users/signup", user, config);
             console.log("Signup success", response.data);
             router.push("/login");
         } catch (error: any) {
+            setError(error.response?.data?.error || "Signup failed. Please try again.");
             console.log("Signup failed", error.message);
         } finally {
             setLoading(false);
@@ -29,13 +57,14 @@ const SignupPage = () => {
 
     useEffect(() => {
         const { email, password, username } = user;
-        setButtonDisabled(!(email && password && username));
+        setButtonDisabled(!(username && email && password && isEmailValid(email)));
     }, [user]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen py-2">
             <h1>{loading ? "Processing" : "SignUp"}</h1>
             <hr />
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <label htmlFor="username">Username</label>
             <input
                 className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"

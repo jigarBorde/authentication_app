@@ -1,29 +1,52 @@
 "use client"
 
-
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
 
 const LoginPage = () => {
+    const config = {
+        headers: {
+            "content-type": "application/json"
+        },
+        withCredentials: true,
+    }
     const [credentials, setCredentials] = useState({
         email: "",
         password: "",
     });
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
     const router = useRouter();
 
     const handleLogin = async () => {
         try {
+            setError(""); // Reset error state
             setLoading(true);
+
+            // Validation for empty fields
+            if (!credentials.email) {
+                setError("Please fill email field");
+                return;
+            } else if (!credentials.password) {
+                setError("Please fill password field");
+                return;
+            }
+
             // Assuming you have a login API endpoint at "/api/users/login"
-            const response = await axios.post("/api/users/login", credentials);
+            const response = await axios.post("/api/users/login", credentials, config);
+
             console.log("Login success", response.data);
             // Redirect to the home page after successful login
-            router.push("/");
+            router.push(`/profile/${response.data.user._id}`);
         } catch (error: any) {
-            console.log("Login failed", error.message);
+            // Handle specific error messages from the server if needed
+            if (error.response) {
+                setError(error.response.data.error || "Login failed");
+            } else {
+                setError("Login failed. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
@@ -51,6 +74,7 @@ const LoginPage = () => {
                 onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                 placeholder="Password"
             />
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <button
                 onClick={handleLogin}
                 className={`p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none ${loading ? "text-gray-500 cursor-not-allowed opacity-50" : "focus:border-gray-600"
