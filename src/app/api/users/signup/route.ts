@@ -1,6 +1,7 @@
 import { connect } from "@/database/db";
 import User from "@/models/userModel";
 import { NextRequest, NextResponse } from "next/server";
+import { sendEmail } from "@/helpers/mailer";
 
 
 // connection to database
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
         if (!savedUser) {
             return NextResponse.json({ success: false, error: "internal server error" }, { status: 400 });
         }
+
+        await sendEmail({ email, emailType: "VERIFY", userId: savedUser._id })
         return NextResponse.json({ success: true, message: "user screated successfully", user: savedUser }, { status: 200 });
 
     } catch (error: any) {

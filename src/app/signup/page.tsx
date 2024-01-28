@@ -12,6 +12,7 @@ const SignupPage = () => {
         },
         withCredentials: true,
     }
+
     const [user, setUser] = useState({
         email: "",
         password: "",
